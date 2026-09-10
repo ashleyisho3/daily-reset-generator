@@ -6,10 +6,32 @@
   <title>Daily Reset & Routine Planner Generator</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { margin: 0; padding: 24px; background: #f1f5f9; color: #1e293b; display: flex; gap: 32px; justify-content: center; }
+    
+    body { 
+      margin: 0; 
+      padding: 24px; 
+      background: #f1f5f9; 
+      color: #1e293b; 
+      display: flex; 
+      gap: 32px; 
+      justify-content: center; 
+      align-items: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
     
     /* Builder Controls Panel */
-    .builder { width: 380px; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); height: fit-content; max-height: 94vh; overflow-y: auto; }
+    .builder { 
+      width: 380px; 
+      max-width: 100%;
+      background: #fff; 
+      padding: 24px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06); 
+      height: fit-content; 
+      max-height: 94vh; 
+      overflow-y: auto; 
+    }
     .builder h2 { font-size: 1.25rem; margin-top: 0; color: #0f172a; }
     .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
@@ -32,7 +54,14 @@
     .btn-print:hover { background: #15803d; }
 
     /* Printable Page Layout */
-    .preview-container { display: flex; flex-direction: column; align-items: center; position: relative; }
+    .preview-container { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      position: relative; 
+      max-width: 100%;
+    }
+    
     .page {
       width: 8.5in;
       height: 11in;
@@ -61,6 +90,7 @@
       pointer-events: none;
       white-space: nowrap;
       user-select: none;
+      z-index: 10;
     }
 
     /* Header */
@@ -104,7 +134,6 @@
     /* =========================================
        THEME STYLING PRESETS
        ========================================= */
-    /* Theme 1: Modern Slate */
     .theme-slate { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .theme-slate .header { border-bottom: 2px solid #334155; }
     .theme-slate .header h1 { color: #0f172a; }
@@ -118,7 +147,6 @@
     .theme-slate .tracker-label { color: #475569; }
     .theme-slate .tracker-circle { border: 1.5px solid #64748b; }
 
-    /* Theme 2: Linen & Sage */
     .theme-sage { font-family: "Georgia", serif; }
     .theme-sage .header { border-bottom: 2px solid #52634f; }
     .theme-sage .header h1 { color: #2e3b2b; letter-spacing: 0.18em; }
@@ -132,7 +160,6 @@
     .theme-sage .tracker-label { color: #435240; }
     .theme-sage .tracker-circle { border: 1.5px solid #52634f; }
 
-    /* Theme 3: Rose Blush */
     .theme-blush { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .theme-blush .header { border-bottom: 2px solid #be7b8c; }
     .theme-blush .header h1 { color: #692c3c; }
@@ -146,7 +173,6 @@
     .theme-blush .tracker-label { color: #7f3b4d; }
     .theme-blush .tracker-circle { border: 1.5px solid #be7b8c; }
 
-    /* Theme 4: Minimalist Black & White */
     .theme-mono { font-family: "Courier New", Courier, monospace; }
     .theme-mono .header { border-bottom: 3px solid #000; }
     .theme-mono .header h1 { color: #000; font-weight: 800; letter-spacing: 0.1em; }
@@ -160,7 +186,6 @@
     .theme-mono .tracker-label { color: #000; font-weight: bold; }
     .theme-mono .tracker-circle { border: 1.5px solid #000; border-radius: 0; }
 
-    /* Theme 5: Nordic Navy */
     .theme-navy { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .theme-navy .header { border-bottom: 2px solid #1e3a8a; }
     .theme-navy .header h1 { color: #172554; }
@@ -174,11 +199,78 @@
     .theme-navy .tracker-label { color: #1e3a8a; }
     .theme-navy .tracker-circle { border: 1.5px solid #1d4ed8; }
 
+    /* =========================================
+       MOBILE RESPONSIVE RULES (SCREENS UNDER 960px)
+       ========================================= */
+    @media screen and (max-width: 960px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+        padding: 14px;
+        gap: 24px;
+      }
+
+      .builder {
+        width: 100%;
+        max-height: none;
+        overflow-y: visible;
+        padding: 18px;
+      }
+
+      .preview-container {
+        width: 100%;
+      }
+
+      .page {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: auto;
+        padding: 22px 16px;
+      }
+
+      .watermark {
+        font-size: 2rem;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .header h1 {
+        font-size: 1.35rem;
+      }
+
+      .header p {
+        font-size: 0.8rem;
+      }
+
+      .tracker-bar {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+      }
+    }
+
     /* Print Rules */
     @media print {
-      body { background: transparent; padding: 0; }
+      body { background: transparent; padding: 0; display: block; }
       .builder, .watermark { display: none !important; }
-      .page { box-shadow: none; margin: 0; width: 100%; height: 100%; padding: 0.5in; }
+      .preview-container { width: 100%; max-width: 100%; }
+      .page { 
+        box-shadow: none; 
+        margin: 0; 
+        width: 8.5in !important; 
+        height: 11in !important; 
+        padding: 0.55in 0.75in !important; 
+      }
+      .grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .tracker-bar {
+        flex-direction: row !important;
+      }
     }
   </style>
 </head>
