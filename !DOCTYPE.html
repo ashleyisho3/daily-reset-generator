@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Reset & Routine Planner Generator</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; padding: 24px; background: #f1f5f9; color: #1e293b; display: flex; gap: 32px; justify-content: center; }
+    
+    /* Builder Controls Panel */
+    .builder { width: 380px; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); height: fit-content; max-height: 94vh; overflow-y: auto; }
+    .builder h2 { font-size: 1.25rem; margin-top: 0; color: #0f172a; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+    input, textarea, select { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.88rem; background: #fff; color: #1e293b; }
+    textarea { resize: vertical; height: 65px; }
+
+    .control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .paywall-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin-top: 18px; text-align: center; }
+    .paywall-box p { margin: 0 0 10px; font-size: 0.85rem; color: #475569; }
+    
+    .btn-buy { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.95rem; text-decoration: none; display: block; }
+    .btn-buy:hover { background: #1d4ed8; }
+    
+    .unlock-row { display: flex; gap: 6px; margin-top: 10px; }
+    .unlock-row input { text-align: center; text-transform: uppercase; font-weight: bold; }
+    .btn-unlock { width: auto; padding: 0 14px; background: #334155; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+
+    .btn-print { width: 100%; padding: 12px; background: #16a34a; color: #fff; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 1rem; margin-top: 12px; display: none; }
+    .btn-print:hover { background: #15803d; }
+
+    /* Printable Page Layout */
+    .preview-container { display: flex; flex-direction: column; align-items: center; position: relative; }
+    .page {
+      width: 8.5in;
+      height: 11in;
+      background: #fff;
+      padding: 0.55in 0.75in;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      justify-content: space-between;
+    }
+
+    /* Watermark */
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-35deg);
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: rgba(0, 0, 0, 0.05);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      pointer-events: none;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    /* Header */
+    .header { text-align: center; padding-bottom: 12px; margin-bottom: 18px; }
+    .header h1 { margin: 0; font-size: 1.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .header p { margin: 4px 0 0; font-size: 0.88rem; letter-spacing: 0.08em; }
+
+    /* Quadrant Grid */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex-grow: 1; margin-bottom: 14px; }
+    .section { border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; }
+    .section-title { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 5px; }
+    
+    .checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+    .checklist li { display: flex; align-items: center; }
+    .box { border-radius: 3px; margin-right: 10px; flex-shrink: 0; }
+
+    /* Density Classes */
+    .density-spacious .checklist { gap: 11px; }
+    .density-spacious .checklist li { font-size: 0.92rem; }
+    .density-spacious .box { width: 14px; height: 14px; }
+    .density-spacious .note-line { margin-bottom: 22px; }
+
+    .density-compact .checklist { gap: 6px; }
+    .density-compact .checklist li { font-size: 0.82rem; }
+    .density-compact .box { width: 12px; height: 12px; }
+    .density-compact .note-line { margin-bottom: 16px; }
+
+    /* Footer Tracker Bar */
+    .tracker-bar {
+      border-radius: 6px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .tracker-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+    .tracker-circles { display: flex; gap: 8px; align-items: center; }
+    .tracker-circle { width: 14px; height: 14px; border-radius: 50%; }
+
+    /* =========================================
+       THEME STYLING PRESETS
+       ========================================= */
+    /* Theme 1: Modern Slate */
+    .theme-slate { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .theme-slate .header { border-bottom: 2px solid #334155; }
+    .theme-slate .header h1 { color: #0f172a; }
+    .theme-slate .header p { color: #64748b; }
+    .theme-slate .section { border: 1px solid #cbd5e1; background: #fff; }
+    .theme-slate .section-title { color: #1e293b; border-bottom: 1px solid #e2e8f0; }
+    .theme-slate .checklist li { color: #334155; }
+    .theme-slate .box { border: 1.5px solid #475569; }
+    .theme-slate .note-line { border-bottom: 1px dotted #cbd5e1; }
+    .theme-slate .tracker-bar { border: 1px solid #cbd5e1; background: #f8fafc; }
+    .theme-slate .tracker-label { color: #475569; }
+    .theme-slate .tracker-circle { border: 1.5px solid #64748b; }
+
+    /* Theme 2: Linen & Sage */
+    .theme-sage { font-family: "Georgia", serif; }
+    .theme-sage .header { border-bottom: 2px solid #52634f; }
+    .theme-sage .header h1 { color: #2e3b2b; letter-spacing: 0.18em; }
+    .theme-sage .header p { color: #6b7d67; font-style: italic; }
+    .theme-sage .section { border: 1px solid #d1dcd0; background: #fbfcfb; }
+    .theme-sage .section-title { color: #3c4b39; border-bottom: 1px solid #e2ece1; }
+    .theme-sage .checklist li { color: #435240; }
+    .theme-sage .box { border: 1.5px solid #52634f; }
+    .theme-sage .note-line { border-bottom: 1px dotted #b8c8b6; }
+    .theme-sage .tracker-bar { border: 1px solid #d1dcd0; background: #f6f8f5; }
+    .theme-sage .tracker-label { color: #435240; }
+    .theme-sage .tracker-circle { border: 1.5px solid #52634f; }
+
+    /* Theme 3: Rose Blush */
+    .theme-blush { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .theme-blush .header { border-bottom: 2px solid #be7b8c; }
+    .theme-blush .header h1 { color: #692c3c; }
+    .theme-blush .header p { color: #9d5668; }
+    .theme-blush .section { border: 1px solid #f2d6dc; background: #fffdfd; }
+    .theme-blush .section-title { color: #7f3b4d; border-bottom: 1px solid #fae7eb; }
+    .theme-blush .checklist li { color: #5a2e38; }
+    .theme-blush .box { border: 1.5px solid #be7b8c; }
+    .theme-blush .note-line { border-bottom: 1px dotted #e8bcc6; }
+    .theme-blush .tracker-bar { border: 1px solid #f2d6dc; background: #fff8f9; }
+    .theme-blush .tracker-label { color: #7f3b4d; }
+    .theme-blush .tracker-circle { border: 1.5px solid #be7b8c; }
+
+    /* Theme 4: Minimalist Black & White */
+    .theme-mono { font-family: "Courier New", Courier, monospace; }
+    .theme-mono .header { border-bottom: 3px solid #000; }
+    .theme-mono .header h1 { color: #000; font-weight: 800; letter-spacing: 0.1em; }
+    .theme-mono .header p { color: #444; }
+    .theme-mono .section { border: 1.5px solid #000; background: #fff; border-radius: 0; }
+    .theme-mono .section-title { color: #000; border-bottom: 1.5px solid #000; font-weight: 800; }
+    .theme-mono .checklist li { color: #000; }
+    .theme-mono .box { border: 1.5px solid #000; border-radius: 0; }
+    .theme-mono .note-line { border-bottom: 1px dashed #666; }
+    .theme-mono .tracker-bar { border: 1.5px solid #000; border-radius: 0; background: #fff; }
+    .theme-mono .tracker-label { color: #000; font-weight: bold; }
+    .theme-mono .tracker-circle { border: 1.5px solid #000; border-radius: 0; }
+
+    /* Theme 5: Nordic Navy */
+    .theme-navy { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .theme-navy .header { border-bottom: 2px solid #1e3a8a; }
+    .theme-navy .header h1 { color: #172554; }
+    .theme-navy .header p { color: #3b82f6; }
+    .theme-navy .section { border: 1px solid #bfdbfe; background: #f8faff; }
+    .theme-navy .section-title { color: #1e3a8a; border-bottom: 1px solid #dbeafe; }
+    .theme-navy .checklist li { color: #1e293b; }
+    .theme-navy .box { border: 1.5px solid #1d4ed8; }
+    .theme-navy .note-line { border-bottom: 1px dotted #93c5fd; }
+    .theme-navy .tracker-bar { border: 1px solid #bfdbfe; background: #f0f7ff; }
+    .theme-navy .tracker-label { color: #1e3a8a; }
+    .theme-navy .tracker-circle { border: 1.5px solid #1d4ed8; }
+
+    /* Print Rules */
+    @media print {
+      body { background: transparent; padding: 0; }
+      .builder, .watermark { display: none !important; }
+      .page { box-shadow: none; margin: 0; width: 100%; height: 100%; padding: 0.5in; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls & Paywall -->
+  <div class="builder">
+    <h2>Customize Reset Sheet</h2>
+    
+    <div class="control-row">
+      <div class="form-group">
+        <label>Theme Style</label>
+        <select id="themeSelect" onchange="updateStyles()">
+          <option value="theme-slate">Modern Slate</option>
+          <option value="theme-sage">Linen & Sage</option>
+          <option value="theme-blush">Rose Blush</option>
+          <option value="theme-mono">Minimal B&W</option>
+          <option value="theme-navy">Nordic Navy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Line Spacing</label>
+        <select id="densitySelect" onchange="updateStyles()">
+          <option value="density-spacious">Spacious (Clean)</option>
+          <option value="density-compact">Compact (More items)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Sheet Title</label>
+      <input type="text" id="titleInput" value="Daily Reset & Focus Routine" oninput="updateSheet()" />
+    </div>
+    <div class="form-group">
+      <label>Subtitle / Family Name</label>
+      <input type="text" id="subInput" value="Evening & Morning Checklist" oninput="updateSheet()" />
+    </div>
+
+    <!-- Editable Section 1 -->
+    <div class="control-row">
+      <div class="form-group">
+        <label>Section 1 Title</label>
+        <input type="text" id="sec1Title" value="Morning Launch" oninput="updateSheet()" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Section 1 Items</label>
+      <textarea id="sec1Input" oninput="updateSheet()">Drink 16oz cold water
+Pack lunches & backpacks
+Review daily calendar
+5-minute bed & room tidy</textarea>
+    </div>
+
+    <!-- Editable Section 2 -->
+    <div class="control-row">
+      <div class="form-group">
+        <label>Section 2 Title</label>
+        <input type="text" id="sec2Title" value="Evening Reset" oninput="updateSheet()" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Section 2 Items</label>
+      <textarea id="sec2Input" oninput="updateSheet()">Clear kitchen counters
+Run & empty dishwasher
+Prep coffee for tomorrow
+10-minute family room tidy
+Set out clothes for tomorrow</textarea>
+    </div>
+
+    <!-- Editable Section 3 -->
+    <div class="control-row">
+      <div class="form-group">
+        <label>Section 3 Title</label>
+        <input type="text" id="sec3Title" value="Weekly Focus" oninput="updateSheet()" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Section 3 Items</label>
+      <textarea id="sec3Input" oninput="updateSheet()">Take out trash & recycling
+Sort incoming mail
+Quick vacuum high-traffic spots</textarea>
+    </div>
+
+    <!-- Editable Section 4 -->
+    <div class="control-row">
+      <div class="form-group">
+        <label>Section 4 Title</label>
+        <input type="text" id="sec4Title" value="Daily Priorities & Notes" oninput="updateSheet()" />
+      </div>
+    </div>
+
+    <!-- Monetization Box -->
+    <div class="paywall-box" id="payBox">
+      <p>Customize for free. Unlock print-ready, unwatermarked PDF:</p>
+      <a href="https://ashleyishow.gumroad.com/l/qvdsc" target="_blank" class="btn-buy">Unlock Clean PDF ($3.99)</a>
+      
+      <div class="unlock-row">
+        <input type="text" id="passcode" placeholder="Enter Access Code" />
+        <button class="btn-unlock" onclick="unlock()">Unlock</button>
+      </div>
+    </div>
+
+    <button id="printBtn" class="btn-print" onclick="window.print()">Print Clean PDF</button>
+  </div>
+
+  <!-- Printable Preview -->
+  <div class="preview-container">
+    <div class="page theme-slate density-spacious" id="sheet">
+      <div class="watermark" id="wm">PREVIEW ONLY • PREVIEW ONLY</div>
+      
+      <div class="header">
+        <h1 id="previewTitle">Daily Reset & Focus Routine</h1>
+        <p id="previewSub">Evening & Morning Checklist</p>
+      </div>
+
+      <div class="grid">
+        <div class="section">
+          <div class="section-title" id="pSec1">Morning Launch</div>
+          <ul class="checklist" id="sec1List"></ul>
+        </div>
+        <div class="section">
+          <div class="section-title" id="pSec2">Evening Reset</div>
+          <ul class="checklist" id="sec2List"></ul>
+        </div>
+        <div class="section">
+          <div class="section-title" id="pSec3">Weekly Focus</div>
+          <ul class="checklist" id="sec3List"></ul>
+        </div>
+        <div class="section">
+          <div class="section-title" id="pSec4">Daily Priorities & Notes</div>
+          <div class="note-line" style="flex-grow: 1;"></div>
+          <div class="note-line" style="flex-grow: 1;"></div>
+          <div class="note-line" style="flex-grow: 1;"></div>
+        </div>
+      </div>
+
+      <!-- Footer Tracker -->
+      <div class="tracker-bar">
+        <span class="tracker-label">Daily Hydration / Habit Tracker</span>
+        <div class="tracker-circles">
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+          <div class="tracker-circle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function renderList(inputId, listId) {
+      const items = document.getElementById(inputId).value.split('\n').filter(t => t.trim() !== '');
+      const list = document.getElementById(listId);
+      list.innerHTML = items.map(item => `<li><div class="box"></div>${item}</li>`).join('');
+    }
+
+    function updateSheet() {
+      document.getElementById('previewTitle').innerText = document.getElementById('titleInput').value || 'Daily Reset';
+      document.getElementById('previewSub').innerText = document.getElementById('subInput').value || '';
+      
+      document.getElementById('pSec1').innerText = document.getElementById('sec1Title').value || 'Section 1';
+      document.getElementById('pSec2').innerText = document.getElementById('sec2Title').value || 'Section 2';
+      document.getElementById('pSec3').innerText = document.getElementById('sec3Title').value || 'Section 3';
+      document.getElementById('pSec4').innerText = document.getElementById('sec4Title').value || 'Section 4';
+
+      renderList('sec1Input', 'sec1List');
+      renderList('sec2Input', 'sec2List');
+      renderList('sec3Input', 'sec3List');
+    }
+
+    function updateStyles() {
+      const theme = document.getElementById('themeSelect').value;
+      const density = document.getElementById('densitySelect').value;
+      const sheet = document.getElementById('sheet');
+      sheet.className = `page ${theme} ${density}`;
+    }
+
+    function unlock() {
+      const code = document.getElementById('passcode').value.trim().toUpperCase();
+      if (code === 'RESET2026') {
+        document.getElementById('wm').style.display = 'none';
+        document.getElementById('payBox').style.display = 'none';
+        document.getElementById('printBtn').style.display = 'block';
+        alert('Unlocked! You can now print or save your clean PDF.');
+      } else {
+        alert('Invalid access code. Please check your purchase receipt or complete checkout.');
+      }
+    }
+
+    updateSheet();
+  </script>
+</body>
+</html>
